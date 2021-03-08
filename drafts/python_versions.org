@@ -1,5 +1,5 @@
 #+TITLE: Python Versions and Virtual Environments
-#+SETUPFILE: setup.org
+#+SETUPFILE: ../setup.org
 
 * The Problem
 

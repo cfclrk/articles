@@ -1,5 +1,5 @@
 #+TITLE: Multiple GitHub Accounts
-#+SETUPFILE: setup.org
+#+SETUPFILE: ../setup.org
 
 */The Problem/*: You have multiple GitHub accounts, and you want to git to
 automatically use a particular account depending on what directory a project is
