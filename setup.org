@@ -1,0 +1,3 @@
+#+OPTIONS: timestamp:nil
+#+PROPERTY: header-args+ :eval never-export
+#+PROPERTY: header-args+ :exports both

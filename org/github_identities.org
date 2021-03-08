@@ -1,0 +1,231 @@
+#+TITLE: Multiple GitHub Accounts
+#+SETUPFILE: setup.org
+
+*/The Problem/*: You have multiple GitHub accounts, and you want to git to
+automatically use a particular account depending on what directory a project is
+in.
+
+In this article I'll use two GitHub accounts as an example: *work* and *home*
+(but the idea supports any number of accounts). You'd like to use your /home/
+account for personal projects and your /work/ account for work. Here we set
+things up so that:
+
+- Projects in =~/work/...= use the *work* GitHub account
+- Projects located anywhere else use the *home* GitHub account
+
+This is all just git and ssh configuration; no editor-specific configuration
+should be required (since editors should be shelling out to git anyway).
+
+* The git config
+
+  The git configuration must do two things:
+
+  1. Tell git to use a different configuration depending on the directory a
+     project is in. Git supports this with the [[https://git-scm.com/docs/git-config#_conditional_includes][includeIf]] directive.
+  2. Perform git URL-rewriting with [[https://git-scm.com/docs/git-config#Documentation/git-config.txt-urlltbasegtinsteadOf][insteadOf]], which allows SSH to make a
+     distinction between the two accounts.
+
+  First, tell git to use a particular configuration depending on the directory a
+  project is in.
+
+  File: =~/.config/git/config=
+
+  #+begin_src gitconfig
+    [user]
+        name = Chris Clark
+    [includeIf "gitdir:~/work/"]
+        path = work.gitconfig
+    [includeIf "gitdir:/"]
+        path = home.gitconfig
+  #+end_src
+
+  Then, we create a new git config file for each GitHub account. In each file,
+  specify your email address, GitHub username, and a url-rewriting [[https://git-scm.com/docs/git-config#Documentation/git-config.txt-urlltbasegtinsteadOf][insteadOf]]
+  line which modifies the base URL that git and SSH see.
+
+  File: =~/.config/git/work.gitconfig=
+
+  #+begin_src gitconfig
+    [user]
+        email = cfclrk@work.com
+    [github]
+        user = cfclrk-work
+    [url "git@github-work"]
+        insteadOf = git@github.com
+    [url "git@gist-work"]
+        insteadOf = git@gist.github.com
+  #+end_src
+
+  File: =~/.config/git/config-home=
+
+  #+begin_src gitconfig
+    [user]
+        email = cfclrk@gmail.com
+    [github]
+        user = cfclrk
+    [url "git@github-home"]
+        insteadOf = git@github.com
+    [url "git@gist-home"]
+        insteadOf = git@gist.github.com
+  #+end_src
+
+  That's it for the git config! The rest of this section elaborates on this
+  config, if you are interested.
+
+** Background: Git URL rewriting
+
+   To take a closer look at what this part of /home.gitconfig/ means:
+
+   #+begin_src gitconfig
+     [url "git@github-home"]
+         insteadOf = git@github.com
+   #+end_src
+
+   Here I've said: "Mr. Git, any time you see a URL that starts with
+   =git@github.com=, please just pretend like the URL actually starts with
+   =git@github-home=".
+
+   For example, let's see what git thinks about the repository where I'm writing
+   [[https://github.com/cfclrk/articles][this article]]. If I just =cat= the git config file in my local /articles/
+   repo, I see the real remote URL:
+
+   #+begin_src bash :results output
+     cat .git/config | grep "\[remote" -A 2
+   #+end_src
+
+   #+RESULTS:
+   : [remote "origin"]
+   : 	url = git@github.com:cfclrk/articles.git
+   : 	fetch = +refs/heads/*:refs/remotes/origin/*
+
+   But when I use the =git remote= command line to view that value, I see this:
+
+   #+begin_src bash :results output
+     git remote -v
+   #+end_src
+
+   #+RESULTS:
+   : origin	git@github-home:cfclrk/articles.git (fetch)
+   : origin	git@github-home:cfclrk/articles.git (push)
+
+   We can see that =git remote= shows the rewritten URL. Git performs the
+   url-rewriting at a really low level, so all git commands see the rewritten
+   form.
+
+   The value I chose -- in this case "github-home" -- could have been anything
+   (well, anything without spaces, etc). It doesn't matter so much /what/ the
+   value is, it just matters that you use the /same/ value in your git config
+   and in your SSH config (as explained in the section [[#the-ssh-config]]).
+
+** Background: Git config loading
+
+  Git loads /all/ applicable config files, and greedily uses the first value it
+  finds for each option.
+
+  For example: say you have the git config specified above, and you are
+  currently in a git repository located at =~/work/projectA/=. Git first loads
+  the =~/.config/git/config= file and expands all of the =[includeIf]=
+  statements.
+
+  - Does =[includeIf "gitdir:~/work/"]= apply?
+    - Yes, so load =work.gitconfig=
+  - Does =[includeIf "gitdir:/"]= apply?
+    - Yes, so load =home.gitconfig=
+
+  Notice that *both* the =work.gitconfig= and =home.gitconfig= are loaded, but
+  obviously =user.email= can only be set to one value. In this case, the email
+  address will be set to =cfclrk@work.com= since that was the /first/ value
+  loaded for the =user.email= option.
+
+  When you load multiple extra git config files using the =includeIf= directive,
+  you must specify the files in order from /most specific/ to /least specific/.
+
+  A fun little aside: That email address that you specify as the value of
+  =user.email= is the only piece of information GitHub uses when determining who
+  authored a commit(!) You can set that email address to anything! Set it to
+  =torvalds@linux-foundation.org=, and GitHub will happily put Linus Torvalds'
+  picture next to your git commits. And to be sure, [[https://news.ycombinator.com/item?id=10005577][that happens]]. In the section
+  on [[#signed-commits]] I show how to mitigate this problem a little bit.
+
+* The SSH Config
+  :PROPERTIES:
+  :CUSTOM_ID: the-ssh-config
+  :END:
+
+  Assuming you use the =git= protocol (which uses SSH under the covers) and not
+  =https= like some kind of animal, you have two SSH keys for GitHub -- one for
+  each GitHub account (GitHub will not allow you to use the same SSH key for both
+  accounts, I've tried). Assuming you've [[https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh][created]] those, your =~/.ssh= directory
+  looks something like:
+
+  #+begin_example
+    $ tree ~/.ssh/
+    /Users/cfclrk/.ssh/
+    ├── config
+    ├── github-home
+    ├── github-home.pub
+    ├── github-work
+    └── github-work.pub
+  #+end_example
+
+  The =~/.ssh/config= allows you to specify which SSH key should be used for
+  particular DNS domains. And /this/ is where the URL-rewriting stuff comes in
+  to play! We can tell SSH to use one key for =github-home=, and another key for
+  =github-work=.
+
+  File: =~/.ssh/config=
+
+  #+begin_src conf
+    Host github-home
+        HostName       github.com
+        User           git
+        IdentityFile   ~/.ssh/github-home
+        IdentitiesOnly yes
+
+    Host github-work
+        HostName       github.com
+        User           git
+        IdentityFile   ~/.ssh/github-work
+        IdentitiesOnly yes
+
+    Host gist-home
+        HostName       gist.github.com
+        User           git
+        IdentityFile   ~/.ssh/github-home
+        IdentitiesOnly yes
+
+    Host gist-work
+        HostName       gist.github.com
+        User           git
+        IdentityFile   ~/.ssh/github-work
+        IdentitiesOnly yes
+  #+end_src
+
+* SSH passphrases and ssh-agent
+
+* Signed Commits
+  :PROPERTIES:
+  :CUSTOM_ID: signed-commits
+  :END:
+
+  In the section on git configuration, I mentioned how trivial it is to make git
+  commits associated with someone else's GitHub account. To somewhat address
+  this, GitHub now allows you to upload a PGP key to your GitHub account, and
+  GitHub displays a "Verified" badge on commits that are signed with a PGP key
+  that matches the email address associated with the commit.
+
+  Setting up PGP key signing with one GitHub account isn't too bad, but I didn't
+  see an obvious way sign commits with different keys depending on what the git
+  configuration of a project is.
+
+  It would be super next-level if you find a simple way to automatically sign
+  commits with the right PGP key when using multiple GitHub accounts. If you've
+  got a cool setup that does that, let me know!
+
+* Emacs: Configuring Forge
+
+  Need to update =forge-alist=
+
+* Resources
+
+  https://yayimorphology.org/ssh-identities-made-easy.html
