@@ -25,6 +25,7 @@
     :html-head-include-default-style nil
     :with-creator nil
     :with-author nil
+    :with-timestamps nil
     :section-numbers nil
     :html-preamble site/site-preamble
     :html-self-link-headlines t

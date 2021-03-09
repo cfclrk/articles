@@ -1,14 +1,14 @@
-#+TITLE: Python Versions and Virtual Environments
+#+TITLE: Python Development Setup (Emacs and MacOS)
 #+SETUPFILE: ../setup.org
 
 * The Problem
 
-  */The Problem/*: You want to have several versions of Python installed and
-  easily switch between them.
+  You want to have several versions of Python installed and easily switch
+  between them. Additionally, in Emacs, you want to use LSP.
 
-  In my personal opinion, the best solution on Linux/MacOS is to use =pyenv=,
-  both for installing Python versions and for creating Python virtual
-  environments.
+  In my personal opinion, the best solution for managing python virtual
+  environments on Linux/MacOS is =pyenv=, both for installing Python versions
+  and for creating Python virtual environments.
 
 * The Solution: =pyenv=
 
