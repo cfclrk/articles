@@ -1,0 +1,23 @@
+#+TITLE: Curating Important Artifacts
+
+* Artifact Repository Manager
+
+"Artifact" is an overloaded term. I think of an /artifact/ as a single-file
+resource that is the product of some build of some project. They are typically
+binaries, like `jar`s for the JVM or native binaries built with `go build` or
+`cargo build`. Even interpreted languages usually specify a single-file package
+format, which may just be a bunch of source code zipped up into one file with
+some metadata (like a python `pip` packages build with =sdist=). These
+single-file things are "artifacts".
+
+An Artifact Repository Manager stores artifacts so that you have them all in one
+place. A good ARM will know the protocols of popular package managers, so that
+you can store javascript packages in an NPM repo and =npm install= them, or
+store =.deb= artifacts in a =deb= repo and =apt-get install= them, etc.
+
+Artifactory
+Clarive
+
+* Curating Artifacts
+
+Some artifacts are more important than others.

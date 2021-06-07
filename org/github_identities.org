@@ -1,18 +1,32 @@
 #+TITLE: Multiple GitHub Accounts
 #+SETUPFILE: ../setup.org
 
-*/The Problem/*: You have multiple GitHub accounts, and you want to git to
-automatically use a particular account depending on the local directory a
-project is in.
+* The Problem
 
-In this article I use two GitHub accounts: *work* and *home* (but the idea
-supports any number of accounts). I set things up so that:
+  */The Problem/*: You have multiple GitHub accounts, and you want to git to
+  automatically use a particular account depending on the directory a project is
+  in.
 
-- Projects in =~/work/= use the *work* GitHub account
-- Projects elsewhere use the *home* GitHub account
+** Current Solution
 
-This is all just git and ssh configuration; no editor-specific configuration
-should be required (since editors should be shelling out to git anyway).
+   In this article I use two GitHub accounts: *work* and *home*, but the idea
+   supports any number of accounts. I set things up so that:
+
+   - Projects in =~/work/= use the *work* GitHub account
+   - Projects in =~/projects/= use the *home* GitHub account
+
+   One directory cannot contain the other.
+
+** Unsolved
+
+   It would be /awesome/ to set things up so that:
+
+   - Projects in =~/work/= use the *work* GitHub account
+   - Projects elsewhere use the *home* GitHub account
+
+   Unfortunately I have not found a way to get that working (have you? [[https://cfclrk.github.io/][Contact]]
+   me!). The problem that I have been unable to get around is with git URL
+   rewriting:
 
 * The git config
 
@@ -29,7 +43,7 @@ should be required (since editors should be shelling out to git anyway).
   File: =~/.config/git/config=
 
   #+begin_src gitconfig
-    [includeIf "gitdir:/"]
+    [includeIf "gitdir:~/home/"]
         path = home.gitconfig
     [includeIf "gitdir:~/work/"]
         path = work.gitconfig
@@ -84,7 +98,7 @@ should be required (since editors should be shelling out to git anyway).
    writing this article. If I just =cat= the git config file in my local
    =articles= repository, I see the real remote URL:
 
-   #+begin_src bash :results output
+   #+begin_src bash :results output :dir ~/Projects/articles
      cat .git/config | grep "\[remote" -A 2
    #+end_src
 
@@ -95,7 +109,7 @@ should be required (since editors should be shelling out to git anyway).
 
    But when I use the =git remote= command line to view that value, I see this:
 
-   #+begin_src bash :results output
+   #+begin_src bash :results output :dir ~/Projects/articles
      git remote -v
    #+end_src
 
@@ -120,13 +134,19 @@ should be required (since editors should be shelling out to git anyway).
    :CUSTOM_ID: config-loading
    :END:
 
-   Git loads /all/ applicable config files. When a single option is set multiple
-   times from multiple files, the last value loaded wins.
+   Git loads /all/ applicable config files. If a single option is set multiple
+   times (potentially form differnt files), the last value wins.
 
-   For example: say you have the git config specified above, and you are
-   currently in a git repository located at =~/work/projectA/=. Git first loads
-   the =~/.config/git/config= file and expands all of the =[includeIf]=
-   statements.
+   For example: say you try =~/.config/git/config= like this.
+
+   #+begin_src gitconfig
+     [includeIf "gitdir:/"]
+         path = home.gitconfig
+     [includeIf "gitdir:~/work/"]
+         path = work.gitconfig
+   #+end_src
+
+   Now you run a git command in a project located at: =~/work/projectA/=.
 
    - Does =[includeIf "gitdir:/"]= apply?
      - *Yes!* Load =home.gitconfig=
@@ -143,9 +163,17 @@ should be required (since editors should be shelling out to git anyway).
    So, when you define multiple =includeIf= directives, you must specify the
    directives in order from /most general/ to /most specific/.
 
+   🛑 *Problem* The above configuration heirarchy plays out nicely for for the
+   =user.email= option. However, it does not seem to work for URL-rewriting
+   rules. In the above example, if the =home.gitconfig= performs URL-rewriting,
+   it seems like the =work.gitconfig= cannot overwrite those URLs (at least, I
+   haven't found a way). For this reason, I haven't been able to create a git
+   configuration that uses my work account in my =~/work= directory and my home
+   account in all other directories.
+
    /Aside/: The value of =user.email= is the only piece of information GitHub
    uses when determining what profile picture to display next to a commit. You
-   can set that email address to anything! Set it to
+   can set that email address to anything! E.g. set it to
    =torvalds@linux-foundation.org=, and GitHub will happily put Linus Torvalds'
    picture next to your git commits. And to be sure, [[https://news.ycombinator.com/item?id=10005577][that happens]]. You can
    /partially/ mitigate this problem of attribution by using [[https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work][signed commits]], as

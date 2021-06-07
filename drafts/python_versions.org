@@ -73,11 +73,11 @@
    =setuptools=.
 
 * Other Solutions
+
 ** Using venv
 
    Problem: the virtual environment cannot be tied to a particular python
    version.
-
 
 * New notes
 
