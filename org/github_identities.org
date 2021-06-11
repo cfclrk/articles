@@ -30,11 +30,6 @@
 
 * The git config
 
-  The git configuration must do two things:
-
-  2. Perform git URL-rewriting with [[https://git-scm.com/docs/git-config#Documentation/git-config.txt-urlltbasegtinsteadOf][insteadOf]], which will allow SSH to properly
-     associate SSH keys with GitHub accounts.
-
   First, tell git to use different git configurations depending on the directory
   a project is in. Git supports this with the [[https://git-scm.com/docs/git-config#_conditional_includes][includeIf]] directive.
 
