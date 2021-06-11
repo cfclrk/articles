@@ -3,42 +3,40 @@
 
 * The Problem
 
-  */The Problem/*: You have multiple GitHub accounts, and you want to git to
-  automatically use a particular account depending on the directory a project is
-  in.
+  You have multiple GitHub accounts, and you want to git to automatically use a
+  particular account depending on the directory a project is in.
 
-** Current Solution
+** My Current Solution
 
-   In this article I use two GitHub accounts: *work* and *home*, but the idea
-   supports any number of accounts. I set things up so that:
+   In this article I set things up so that:
 
    - Projects in =~/work/= use the *work* GitHub account
    - Projects in =~/projects/= use the *home* GitHub account
 
-   One directory cannot contain the other.
+   One directory cannot contain the other. I use two GitHub accounts: *work* and
+   *home*, but the idea supports any number of accounts.
 
-** Unsolved
+** Still Unsolved
 
    It would be /awesome/ to set things up so that:
 
    - Projects in =~/work/= use the *work* GitHub account
    - Projects elsewhere use the *home* GitHub account
 
-   Unfortunately I have not found a way to get that working (have you? [[https://cfclrk.github.io/][Contact]]
-   me!). The problem that I have been unable to get around is with git URL
-   rewriting:
+   Unfortunately I have not found a way to make that work (have you? [[https://cfclrk.github.io/][Contact]]
+   me!). Specifically, I have not found how to make git URL-rewriting work in a
+   situation where several URL-rewriting rules apply. More about that in the
+   [[#config-loading]] section.
 
 * The git config
 
   The git configuration must do two things:
 
-  1. Tell git to use different configurations depending on the directory a
-     project is in. Git supports this with the [[https://git-scm.com/docs/git-config#_conditional_includes][includeIf]] directive.
   2. Perform git URL-rewriting with [[https://git-scm.com/docs/git-config#Documentation/git-config.txt-urlltbasegtinsteadOf][insteadOf]], which will allow SSH to properly
      associate SSH keys with GitHub accounts.
 
-  First, tell git to use a particular configuration depending on the directory a
-  project is in.
+  First, tell git to use different git configurations depending on the directory
+  a project is in. Git supports this with the [[https://git-scm.com/docs/git-config#_conditional_includes][includeIf]] directive.
 
   File: =~/.config/git/config=
 
@@ -49,9 +47,8 @@
         path = work.gitconfig
   #+end_src
 
-  Then, create a new git config file for each GitHub account. In each file,
-  specify your email address and a url-rewriting [[https://git-scm.com/docs/git-config#Documentation/git-config.txt-urlltbasegtinsteadOf][insteadOf]] rule which modifies
-  the base URL that git and SSH see.
+  Next, create the =home.gitconfig= and =work.gitconfig= files referenced above.
+  Each file specifies an email address and a URL-rewriting rule.
 
   File: =~/.config/git/work.gitconfig=
 
@@ -83,7 +80,7 @@
    :CUSTOM_ID: url-rewriting
    :END:
 
-   To take a closer look at what this part means:
+   To take a closer look at what this [[https://git-scm.com/docs/git-config#Documentation/git-config.txt-urlltbasegtinsteadOf][insteadOf]] part means:
 
    #+begin_src gitconfig
      [url "git@github-home"]
@@ -96,7 +93,7 @@
 
    For example, let's see what git thinks about the [[https://github.com/cfclrk/articles][git repository]] where I'm
    writing this article. If I just =cat= the git config file in my local
-   =articles= repository, I see the real remote URL:
+   =articles= repository, I see the /real/ remote URL:
 
    #+begin_src bash :results output :dir ~/Projects/articles
      cat .git/config | grep "\[remote" -A 2
@@ -107,7 +104,8 @@
    : 	url = git@github.com:cfclrk/articles.git
    : 	fetch = +refs/heads/*:refs/remotes/origin/*
 
-   But when I use the =git remote= command line to view that value, I see this:
+   But when I use a =git= command (like =git remote=) to view that value, I see
+   the /rewritten/ URL:
 
    #+begin_src bash :results output :dir ~/Projects/articles
      git remote -v
@@ -117,17 +115,16 @@
    : origin	git@github-home:cfclrk/articles.git (fetch)
    : origin	git@github-home:cfclrk/articles.git (push)
 
-   We see that the =git remote= command shows the rewritten URL even though the
-   =.git/config= file shows the original URL. So: all git commands will see the
-   rewritten form, but there isn't actually any hard-coded project-specific
-   configuration. If we were to simply move this project out of the =~/work/=
-   directory, different URL-rewriting rules would apply, and =git remote= would
-   show a different URL.
+   All git commands will see this rewritten form. The rewritten form is
+   determined by whatever git config file was loaded when the =git= command was
+   run. If we were to simply move this project out of the =~/home/= directory, a
+   different git config file would be loaded, different URL-rewriting rules
+   would apply, and =git remote -v= would show a different URL.
 
    The value I chose -- in this case "github-home" -- could have been any string
    (well, anything without spaces, etc). It doesn't matter so much /what/ the
-   value is, it just matters that you use the /same/ value in your git config
-   and in your SSH config (as explained in the section [[#the-ssh-config]]).
+   value is, it just matters that you use also use the /same/ value in your SSH
+   config (as explained in the section [[#the-ssh-config]]).
 
 ** More About Git Config Loading
    :PROPERTIES:
@@ -155,10 +152,11 @@
      - *Yes!* Load =work.gitconfig=
      - Set =user.email= to =cfclrk@work.com=
 
-   *Both* the =work.gitconfig= and =home.gitconfig= are loaded. The email address
-   will be set to =cfclrk@work.com= since that was the /last/ value loaded for
-   the =user.email= option. The determining factor is the /order in which the
-   configuration is defined/, and the /last value wins/.
+   In this case, *both* the =work.gitconfig= and =home.gitconfig= are loaded.
+   The email address will end up being set to =cfclrk@work.com= since that was
+   the /last/ value loaded for the =user.email= option. The determining factor
+   is the /order in which the configuration is defined/, and the /last value
+   wins/.
 
    So, when you define multiple =includeIf= directives, you must specify the
    directives in order from /most general/ to /most specific/.
@@ -166,10 +164,10 @@
    🛑 *Problem* The above configuration heirarchy plays out nicely for for the
    =user.email= option. However, it does not seem to work for URL-rewriting
    rules. In the above example, if the =home.gitconfig= performs URL-rewriting,
-   it seems like the =work.gitconfig= cannot overwrite those URLs (at least, I
-   haven't found a way). For this reason, I haven't been able to create a git
-   configuration that uses my work account in my =~/work= directory and my home
-   account in all other directories.
+   it seems like the =work.gitconfig= cannot overwrite those same URLs (at
+   least, I haven't found a way). For this reason, I haven't been able to create
+   a git configuration that uses my work account in my =~/work= directory and my
+   home account in all other directories.
 
    /Aside/: The value of =user.email= is the only piece of information GitHub
    uses when determining what profile picture to display next to a commit. You
@@ -184,11 +182,11 @@
   :CUSTOM_ID: the-ssh-config
   :END:
 
-  Assuming you use the =git= protocol (which uses SSH under the covers) and not
-  =https= like some kind of animal, you have at least two SSH keys for GitHub --
-  one for each GitHub account (GitHub will not allow you to use the same SSH key
-  for both accounts, I've tried). Assuming you've [[https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh][created]] those, your =~/.ssh=
-  directory looks something like:
+  Assuming you use the =git= protocol to clone git repositories (which uses SSH
+  under the covers) and not =https= like some kind of animal, you have at least
+  two SSH keys for GitHub -- one for each GitHub account (GitHub will not allow
+  you to use the same SSH key for both accounts, I've tried). Assuming you've
+  [[https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh][created]] those, your =~/.ssh= directory looks something like:
 
   #+begin_example
     $ tree ~/.ssh/
@@ -201,9 +199,9 @@
   #+end_example
 
   The =~/.ssh/config= allows you to specify which SSH key should be used for
-  particular DNS domains. And /this/ is where the URL-rewriting stuff comes in
-  to play! We can tell SSH to use one key for =github-home=, and another key for
-  =github-work=.
+  particular DNS domains. And /this/ is where all tha URL-rewriting stuff comes
+  in to play! We can tell SSH to use one SSH key for =github-home=, and another
+  SSH key for =github-work=.
 
   File: =~/.ssh/config=
 
