@@ -1,6 +1,6 @@
-#+SETUPFILE: setup.org
+#+SETUPFILE: ../setup.org
 #+OPTIONS: toc:nil
 
-In which I solidify my ideas in writing so that others might read my nonsense.
+In which I write nonsense.
 
 #+INCLUDE: sitemap.org :only-contents t
