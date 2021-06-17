@@ -4,7 +4,7 @@
 * The Problem
 
   You want to have several versions of Python installed and easily switch
-  between them. Additionally, in Emacs, you want to use LSP.
+  between them.
 
   In my personal opinion, the best solution for managing python virtual
   environments on Linux/MacOS is =pyenv=, both for installing Python versions
@@ -78,13 +78,3 @@
 
    Problem: the virtual environment cannot be tied to a particular python
    version.
-
-* New notes
-
-  Use pyenv to download python versions
-
-  Create a pyenv virtualenv for each version?
-
-  Switch to the version of python you want to use (with pyenv)
-
-  python -m venv .venv
