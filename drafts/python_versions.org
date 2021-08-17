@@ -1,7 +1,7 @@
 #+TITLE: Python Development Setup (Emacs and MacOS)
 #+SETUPFILE: ../setup.org
 
-* The Problem
+* Problem
 
   You want to have several versions of Python installed and easily switch
   between them.
@@ -10,7 +10,7 @@
   environments on Linux/MacOS is =pyenv=, both for installing Python versions
   and for creating Python virtual environments.
 
-* The Solution: =pyenv=
+* Solution: =pyenv=
 
   =pyenv= lets you download many versions of Python, and provides a way to
   switch between them.
@@ -74,7 +74,13 @@
 
 * Other Solutions
 
-** Using venv
+** venv
 
-   Problem: the virtual environment cannot be tied to a particular python
-   version.
+   venv is part of the standard library. It is the lowest common denominator for
+   creating virtual environments.
+
+   Problems:
+
+   - The virtual environment cannot be tied to a particular python version
+   - You need a version of python that has venv, which means you already need
+     some way of installing and managing multiple versions of python.

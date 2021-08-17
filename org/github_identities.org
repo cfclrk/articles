@@ -1,32 +1,34 @@
-#+TITLE: Git/SSH Config For Multiple GitHub Accounts
+#+TITLE: Using Multiple GitHub Accounts
 #+SETUPFILE: ../setup.org
 
-* The Problem
+* Problem
 
-  You have multiple GitHub accounts, and you want to git to automatically
-  push/pull to the correct GitHub account for each local project.
+  You have multiple GitHub accounts, and you want git to automatically push/pull
+  to the correct account.
 
 ** Current Solution
 
    In this article I set things up so that:
 
-   - Projects in your =~/work/= directory use the *work* GitHub account
-   - Projects in your =~/projects/= directory use the *home* GitHub account
+   - Projects in your =~/work/= directory use your *work* GitHub account
+   - Projects in your =~/projects/= directory use your *home* GitHub account
 
-   One directory cannot contain the other. I use two GitHub accounts: *work* and
-   *home*, but the idea supports any number of accounts.
+   One directory /cannot contain the other/. Here I use two GitHub accounts,
+   *work* and *home*, but the idea supports any number of accounts.
 
 ** Unsolved
 
-   What happens when you clone a repo to =~/some_other_dir=? You have to re-do
-   the steps in this article for that directory. What I /really want/ is a
-   setup that does this:
+   What if you want to create a git repo in =~/some_other_dir= (i.e., not in
+   =~/work= or =~/projects=)? You have to create another line item in your
+   =~/.config/git/work.gitconfig= to tell git which config file to use.
 
-   - Projects in =~/work/= and =~/go= use the *work* GitHub account
-   - Projects elsewhere use the *home* GitHub account
+   What I /really want/ is a setup that does this:
 
-   Unfortunately, I haven't gotten that working yet (have you? [[https://cfclrk.github.io/][Contact]] me!).
-   More about that in the [[#config-loading]] section.
+   - Projects in =~/work/= use my *work* GitHub account
+   - Projects elsewhere use my *home* GitHub account
+
+   Unfortunately I haven't gotten that working (have you? [[https://cfclrk.github.io/][Contact]] me!). More
+   about that in the [[#config-loading]] section.
 
 * The git config
 
@@ -111,7 +113,7 @@
    : origin	git@github-home:cfclrk/articles.git (push)
 
    All git commands will see this rewritten form. The rewritten form is
-   determined by whatever git config file was loaded when the =git= command was
+   determined by the git config file that was loaded when the =git= command was
    run. If we were to simply move this project out of the =~/projects/=
    directory, a different git config file would be loaded, different
    URL-rewriting rules would apply, and =git remote -v= would show a different
@@ -130,7 +132,14 @@
    Git loads /all/ applicable config files. If a single option is set multiple
    times (potentially form differnt files), the last value wins.
 
-   For example: say you try =~/.config/git/config= like this.
+   We might try to use this fact to attempt to create a configuration heirarchy
+   that says:
+
+   1. Load my *home* config.
+   2. If in the =~/work/= directory, load my *work* config, which will overwrite
+      setting loaded from the *home* config.
+
+   For example: a =~/.config/git/config= like this:
 
    #+begin_src gitconfig
      [includeIf "gitdir:/"]
@@ -139,7 +148,8 @@
          path = work.gitconfig
    #+end_src
 
-   Now you run a git command in a project located at: =~/work/projectA/=.
+   Now, when you run a git command in a project located at =~/work/projectA/=,
+   git does something like:
 
    - Does =[includeIf "gitdir:/"]= apply?
      - *Yes!* Load =home.gitconfig=
@@ -148,8 +158,8 @@
      - *Yes!* Load =work.gitconfig=
      - Set =user.email= to =cfclrk@work.com=
 
-   In this case, *both* the =work.gitconfig= and =home.gitconfig= are loaded.
-   The email address will end up being set to =cfclrk@work.com= since that was
+   In this case, it works! *Both* the =work.gitconfig= and =home.gitconfig= are
+   loaded. The email address will end up being =cfclrk@work.com= since that was
    the /last/ value loaded for the =user.email= option. The determining factor
    is the /order in which the configuration is defined/, and the /last value
    wins/.
@@ -181,8 +191,8 @@
   Assuming you use the =git= protocol to clone git repositories (which uses SSH
   under the covers) and not =https= like some kind of animal, you have at least
   two SSH keys for GitHub -- one for each GitHub account (GitHub will not allow
-  you to use the same SSH key for both accounts, I've tried). Assuming you've
-  [[https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh][created]] those, your =~/.ssh= directory looks something like:
+  you to use the same SSH key for both accounts). Assuming you've [[https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh][created]] those,
+  your =~/.ssh= directory looks something like:
 
   #+begin_example
     $ tree ~/.ssh/
@@ -194,10 +204,11 @@
     └── github-work.pub
   #+end_example
 
-  The =~/.ssh/config= allows you to specify which SSH key should be used for
-  particular DNS domains. And /this/ is where all tha URL-rewriting stuff comes
-  in to play! We can tell SSH to use one SSH key for =github-home=, and another
-  SSH key for =github-work=.
+  The =~/.ssh/config= file allows you to associate SSH keys with DNS domains.
+  And /this/ is where all tha URL-rewriting stuff comes in to play! We can tell
+  SSH to use one SSH key for =github-home=, and another SSH key for
+  =github-work=. Without the URL-rewriting, we would have two SSH keys for
+  =github.com=, and that confuses SSH.
 
   File: =~/.ssh/config=
 
