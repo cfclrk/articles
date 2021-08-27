@@ -69,15 +69,13 @@
         insteadOf = git@gist.github.com
   #+end_src
 
-  That's it for the git config! The rest of this section elaborates on the
-  above, if you are interested.
+  That's it for the git config! Move on to [[#the-ssh-config]]. The next two
+  subsections elaborate on the above, if you are interested.
 
 ** More About Git URL Rewriting
    :PROPERTIES:
    :CUSTOM_ID: url-rewriting
    :END:
-
-   To take a closer look at what this [[https://git-scm.com/docs/git-config#Documentation/git-config.txt-urlltbasegtinsteadOf][insteadOf]] part means:
 
    #+begin_src gitconfig
      [url "git@github-home"]
@@ -188,11 +186,11 @@
   :CUSTOM_ID: the-ssh-config
   :END:
 
-  Assuming you use the =git= protocol to clone git repositories (which uses SSH
-  under the covers) and not =https= like some kind of animal, you have at least
-  two SSH keys for GitHub -- one for each GitHub account (GitHub will not allow
-  you to use the same SSH key for both accounts). Assuming you've [[https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh][created]] those,
-  your =~/.ssh= directory looks something like:
+  Assuming you use the =git= protocol to clone repositories (not =https= like
+  some kind of animal), you have at least two SSH keys for GitHub -- one for
+  each GitHub account (GitHub will not allow you to use the same SSH key for
+  both accounts). Assuming you've [[https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh][created]] those, your =~/.ssh= directory looks
+  something like:
 
   #+begin_example
     $ tree ~/.ssh/
@@ -205,7 +203,7 @@
   #+end_example
 
   The =~/.ssh/config= file allows you to associate SSH keys with DNS domains.
-  And /this/ is where all tha URL-rewriting stuff comes in to play! We can tell
+  And /this/ is where all the URL-rewriting stuff comes in to play! We can tell
   SSH to use one SSH key for =github-home=, and another SSH key for
   =github-work=. Without the URL-rewriting, we would have two SSH keys for
   =github.com=, and that confuses SSH.
